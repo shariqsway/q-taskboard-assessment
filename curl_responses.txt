@@ -1,0 +1,68 @@
+Scenario 1 — Viewer (dev@example.com, role: viewer)
+BEFORE fix
+{
+  "task": {
+    "id": "cmq9w0y1s000vmh63n704dva3",
+    "projectId": "cmq9w0y1k0006mh63l5zeozpw",
+    "title": "BEFORE - VIEWER EDIT",
+    "description": "Detail for: Prepare customer email blast",
+    "status": "todo",
+    "assigneeId": "cmq9w0y1h0002mh63b6gfsr4u",
+    "createdById": "cmq9w0y1f0000mh63a64q5fx8",
+    "position": 4,
+    "updatedAt": "2026-06-11T20:08:29.880Z",
+    "assignee": {
+      "id": "cmq9w0y1h0002mh63b6gfsr4u",
+      "name": "Kavya Reddy",
+      "email": "kavya@example.com"
+    }
+  }
+}
+HTTP_STATUS:200
+Viewer could change the task title. Bug.
+
+AFTER fix
+{"error":"viewers cannot update tasks"}
+HTTP_STATUS:403
+Viewer is blocked. Task title unchanged.
+
+Scenario 2 — Non-member (lina@example.com, not on Q3 Launch)
+BEFORE fix
+{
+  "task": {
+    "id": "cmq9w0y1s000vmh63n704dva3",
+    "projectId": "cmq9w0y1k0006mh63l5zeozpw",
+    "title": "BEFORE - NON-MEMBER EDIT",
+    "description": "Detail for: Prepare customer email blast",
+    "status": "todo",
+    "assigneeId": "cmq9w0y1h0002mh63b6gfsr4u",
+    "createdById": "cmq9w0y1f0000mh63a64q5fx8",
+    "position": 4,
+    "updatedAt": "2026-06-11T20:08:30.180Z",
+    "assignee": {
+      "id": "cmq9w0y1h0002mh63b6gfsr4u",
+      "name": "Kavya Reddy",
+      "email": "kavya@example.com"
+    }
+  }
+}
+HTTP_STATUS:200
+Any logged-in user with a task ID could edit it. Bug.
+
+AFTER fix
+
+{"error":"you are not a member of this project"}
+HTTP_STATUS:403
+Non-member is blocked.
+
+Summary
+Actor	Before	After
+Viewer PATCH
+200 — task updated
+403 — "viewers cannot update tasks"
+Non-member PATCH
+200 — task updated
+403 — "you are not a member of this project"
+Member PATCH
+200 (unchanged)
+200 (unchanged)

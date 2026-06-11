@@ -1,0 +1,32 @@
+shariq@Mohammads-MacBook-Air q-taskboard-assessment % docker-compose exec web npm run db:seed
+
+> taskboard@0.1.0 db:seed
+> tsx prisma/seed.ts
+
+seeding…
+seed complete.
+login with any of these (password: password123):
+  meera@taskboard.dev   — admin on Q3 Launch, Internal Tools
+  arjun@taskboard.dev   — admin on Onboarding, member on Q3 Launch
+  kavya@example.com     — member on Q3 Launch
+  dev@example.com       — viewer on Q3 Launch
+  lina@example.com      — member on Onboarding
+shariq@Mohammads-MacBook-Air q-taskboard-assessment % docker-compose exec web npm test
+
+> taskboard@0.1.0 test
+> vitest run
+
+The CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.
+
+ RUN  v2.1.8 /app
+
+ ✓ src/tests/TaskCard.test.tsx (3)
+ ✓ src/tests/auth.test.ts (2)
+ ✓ src/tests/schemas.test.ts (7)
+
+ Test Files  3 passed (3)
+      Tests  12 passed (12)
+   Start at  19:26:03
+   Duration  807ms (transform 90ms, setup 235ms, collect 178ms, tests 73ms, environment 879ms, prepare 392ms)
+
+shariq@Mohammads-MacBook-Air q-taskboard-assessment % 
