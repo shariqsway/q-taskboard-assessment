@@ -9,6 +9,7 @@ import {
 } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateTaskSchema } from "@/schemas/task";
+import { recordTaskUpdated } from "@/lib/activity/record";
 import { NextRequest, NextResponse } from "next/server";
 
 type Params = { params: Promise<{ id: string }> };
@@ -40,6 +41,24 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       assignee: { select: { id: true, name: true, email: true } },
     },
   });
+
+  await recordTaskUpdated(
+    {
+      id: existing.id,
+      projectId: existing.projectId,
+      title: existing.title,
+      status: existing.status,
+      assigneeId: existing.assigneeId,
+    },
+    {
+      id: task.id,
+      projectId: task.projectId,
+      title: task.title,
+      status: task.status,
+      assigneeId: task.assigneeId,
+    },
+    user.id,
+  );
 
   return NextResponse.json({ task });
 }

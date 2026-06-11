@@ -20,6 +20,12 @@ enum TaskStatus {
   done
 }
 
+enum ActivityType {
+  task_created
+  status_changed
+  assignee_changed
+}
+
 model User {
   id           String   @id @default(cuid())
   email        String
@@ -32,6 +38,7 @@ model User {
   ownedProjects  Project[]    @relation("ProjectOwner")
   assignedTasks  Task[]       @relation("TaskAssignee")
   createdTasks   Task[]       @relation("TaskCreator")
+  activities     Activity[]   @relation("ActivityActor")
 
   @@map("users")
 }
@@ -47,6 +54,7 @@ model Project {
   owner       User         @relation("ProjectOwner", fields: [ownerId], references: [id])
   memberships Membership[]
   tasks       Task[]
+  activities  Activity[]
 
   @@map("projects")
 }
@@ -82,9 +90,28 @@ model Task {
   assignee  User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
   createdBy User    @relation("TaskCreator", fields: [createdById], references: [id])
   airtableSync TaskAirtableSync?
+  activities   Activity[]
 
   @@index([projectId, status])
   @@map("tasks")
+}
+
+model Activity {
+  id        String       @id @default(cuid())
+  projectId String       @map("project_id")
+  taskId    String       @map("task_id")
+  actorId   String       @map("actor_id")
+  type      ActivityType
+  taskTitle String       @map("task_title")
+  metadata  Json?
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  task    Task    @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  actor   User    @relation("ActivityActor", fields: [actorId], references: [id])
+
+  @@index([projectId, createdAt(sort: Desc)])
+  @@map("activities")
 }
 
 model TaskAirtableSync {

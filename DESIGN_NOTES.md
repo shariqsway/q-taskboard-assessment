@@ -9,13 +9,13 @@
 
 ### Requirements mapping
 
-| Requirement | Approach |
-|-------------|----------|
+| Requirement                 | Approach                                                                                     |
+| --------------------------- | -------------------------------------------------------------------------------------------- |
 | Official `airtable` package | Thin wrapper in `src/lib/airtable/client.ts` around `Airtable.base(baseId).table(tableName)` |
-| Real API calls | Server-side only (Route Handler); credentials from env, never sent to browser |
-| Duplicate-safe | External key field + persisted `airtableRecordId` mapping per task |
-| Retries | Shared retry helper with exponential backoff on 429 / 5xx / network errors |
-| Partial failure | Per-task result collection; commit sync state for successes; return mixed-status report |
+| Real API calls              | Server-side only (Route Handler); credentials from env, never sent to browser                |
+| Duplicate-safe              | External key field + persisted `airtableRecordId` mapping per task                           |
+| Retries                     | Shared retry helper with exponential backoff on 429 / 5xx / network errors                   |
+| Partial failure             | Per-task result collection; commit sync state for successes; return mixed-status report      |
 
 ---
 
@@ -72,11 +72,11 @@ src/
 
 **Endpoint:** `POST /api/projects/:id/export/airtable`
 
-| Check | Rule | Rationale |
-|-------|------|-----------|
-| Authentication | `getCurrentUser` → 401 | Consistent with existing routes |
-| Membership | `getProjectMembership` → 403 | Must belong to project |
-| Role | `canEditProject` (admin only) | Export is a write-side-effect to external system; align with project DELETE/PATCH |
+| Check          | Rule                          | Rationale                                                                         |
+| -------------- | ----------------------------- | --------------------------------------------------------------------------------- |
+| Authentication | `getCurrentUser` → 401        | Consistent with existing routes                                                   |
+| Membership     | `getProjectMembership` → 403  | Must belong to project                                                            |
+| Role           | `canEditProject` (admin only) | Export is a write-side-effect to external system; align with project DELETE/PATCH |
 
 Optional request body (future): `{ taskIds?: string[] }` to export a subset. Default: all tasks in project.
 
@@ -88,20 +88,20 @@ Optional request body (future): `{ taskIds?: string[] }` to export a subset. Def
 
 Define these columns in the Airtable **Tasks** table (`AIRTABLE_TABLE_NAME`, default `"Tasks"`):
 
-| Airtable field | Source | Notes |
-|----------------|--------|-------|
-| `TaskBoard Task ID` | `task.id` | **Idempotency key** — single-line text, unique |
-| `Title` | `task.title` | |
-| `Description` | `task.description` | Long text |
-| `Status` | `task.status` | Single select matching enum values |
-| `Project ID` | `task.projectId` | Single-line text |
-| `Project Name` | `project.name` | Lookup context for humans |
-| `Assignee Email` | `task.assignee?.email` | Optional |
-| `Assignee Name` | `task.assignee?.name` | Optional |
-| `Position` | `task.position` | Number |
-| `Created At` | `task.createdAt` | ISO string |
-| `Updated At` | `task.updatedAt` | ISO string |
-| `Last Synced At` | server timestamp | Set on each successful export |
+| Airtable field      | Source                 | Notes                                          |
+| ------------------- | ---------------------- | ---------------------------------------------- |
+| `TaskBoard Task ID` | `task.id`              | **Idempotency key** — single-line text, unique |
+| `Title`             | `task.title`           |                                                |
+| `Description`       | `task.description`     | Long text                                      |
+| `Status`            | `task.status`          | Single select matching enum values             |
+| `Project ID`        | `task.projectId`       | Single-line text                               |
+| `Project Name`      | `project.name`         | Lookup context for humans                      |
+| `Assignee Email`    | `task.assignee?.email` | Optional                                       |
+| `Assignee Name`     | `task.assignee?.name`  | Optional                                       |
+| `Position`          | `task.position`        | Number                                         |
+| `Created At`        | `task.createdAt`       | ISO string                                     |
+| `Updated At`        | `task.updatedAt`       | ISO string                                     |
+| `Last Synced At`    | server timestamp       | Set on each successful export                  |
 
 The official SDK does **not** allow setting Airtable record IDs (`rec…`) on create. Duplicate safety relies on `TaskBoard Task ID`, not on CUID-as-record-id (the mock's `id` upsert pattern is test-only).
 
@@ -157,11 +157,11 @@ Run once per task only when no local mapping exists (or batch formula with `OR()
 - Fail fast at call time if credentials missing (not at module import — keeps tests working).
 - Expose a narrow interface (not raw SDK everywhere):
 
-| Method | SDK call | Purpose |
-|--------|----------|---------|
-| `createRecord(fields)` | `table.create(fields, { typecast: true })` | New task |
-| `updateRecord(recordId, fields)` | `table.update(recordId, fields, { typecast: true })` | Existing task |
-| `findByTaskBoardId(taskId)` | `table.select({ filterByFormula, maxRecords: 1 })` | Recovery / dedup |
+| Method                           | SDK call                                             | Purpose          |
+| -------------------------------- | ---------------------------------------------------- | ---------------- |
+| `createRecord(fields)`           | `table.create(fields, { typecast: true })`           | New task         |
+| `updateRecord(recordId, fields)` | `table.update(recordId, fields, { typecast: true })` | Existing task    |
+| `findByTaskBoardId(taskId)`      | `table.select({ filterByFormula, maxRecords: 1 })`   | Recovery / dedup |
 
 Use `{ typecast: true }` so select options are auto-created if missing.
 
@@ -194,13 +194,13 @@ Airtable REST limits (per base):
 
 `src/lib/airtable/retry.ts` — generic `withRetry(operation, options)`:
 
-| Error | Retry? | Backoff |
-|-------|--------|---------|
-| HTTP 429 (rate limit) | Yes | `Retry-After` header if present, else exponential: 1s → 2s → 4s + jitter |
-| HTTP 5xx | Yes | Exponential backoff, max 3 attempts |
-| Network timeout / ECONNRESET | Yes | Same as 5xx |
-| HTTP 4xx (except 429) | No | Fail immediately — bad field name, auth, etc. |
-| 404 on update | No | Treat as stale mapping → clear DB recordId → re-classify as create on next pass |
+| Error                        | Retry? | Backoff                                                                         |
+| ---------------------------- | ------ | ------------------------------------------------------------------------------- |
+| HTTP 429 (rate limit)        | Yes    | `Retry-After` header if present, else exponential: 1s → 2s → 4s + jitter        |
+| HTTP 5xx                     | Yes    | Exponential backoff, max 3 attempts                                             |
+| Network timeout / ECONNRESET | Yes    | Same as 5xx                                                                     |
+| HTTP 4xx (except 429)        | No     | Fail immediately — bad field name, auth, etc.                                   |
+| 404 on update                | No     | Treat as stale mapping → clear DB recordId → re-classify as create on next pass |
 
 **Defaults:** `maxAttempts: 3`, `baseDelayMs: 1000`, `maxDelayMs: 8000`.
 
@@ -254,8 +254,8 @@ type ExportReport = {
 
 ### API integration (frontend)
 
-| Operation | Method | Endpoint | Query key invalidation |
-|-----------|--------|----------|------------------------|
+| Operation          | Method | Endpoint                            | Query key invalidation                                                                    |
+| ------------------ | ------ | ----------------------------------- | ----------------------------------------------------------------------------------------- |
 | Export to Airtable | `POST` | `/api/projects/:id/export/airtable` | None required (tasks unchanged); optional `["project", id]` if UI shows sync status later |
 
 Mutation pattern (matches existing `createTask` / `updateTask`):
@@ -269,13 +269,13 @@ Mutation pattern (matches existing `createTask` / `updateTask`):
 
 ### Testing strategy
 
-| Layer | Tool | What it proves |
-|-------|------|----------------|
-| Mapper unit tests | Vitest | Field mapping correct for all task shapes |
-| Retry unit tests | Vitest | Backoff, max attempts, no retry on 4xx |
-| Exporter unit tests | Vitest + `airtable-mock` | Idempotency, partial failure, stale record recovery |
-| Route handler tests | Vitest + mocked exporter | Auth gates (401/403), happy path returns report |
-| Client wrapper | Optional integration | Real API — manual / CI secret, not in default `npm test` |
+| Layer               | Tool                     | What it proves                                           |
+| ------------------- | ------------------------ | -------------------------------------------------------- |
+| Mapper unit tests   | Vitest                   | Field mapping correct for all task shapes                |
+| Retry unit tests    | Vitest                   | Backoff, max attempts, no retry on 4xx                   |
+| Exporter unit tests | Vitest + `airtable-mock` | Idempotency, partial failure, stale record recovery      |
+| Route handler tests | Vitest + mocked exporter | Auth gates (401/403), happy path returns report          |
+| Client wrapper      | Optional integration     | Real API — manual / CI secret, not in default `npm test` |
 
 Keep `airtable-mock.ts` for fast tests. Production code imports `src/lib/airtable/client.ts`, never the mock.
 
@@ -332,3 +332,13 @@ Validate in `config.ts` when export is invoked. Missing vars → `503` with `"ai
 - Webhook on Airtable changes
 - Exporting projects or memberships (tasks only)
 - Real-time progress streaming (SSE) — v1 returns report after completion
+
+## Activity Feed Failiue strategy
+
+I chose not to rollback task updates if activity logging fails.
+
+Task updates are th eprimary business operation.
+
+Activity logging is secondary metadata.
+
+Users should noyt lose work because audit logging temporary fails.
