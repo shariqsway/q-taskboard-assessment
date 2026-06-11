@@ -39,6 +39,7 @@ model User {
   assignedTasks  Task[]       @relation("TaskAssignee")
   createdTasks   Task[]       @relation("TaskCreator")
   activities     Activity[]   @relation("ActivityActor")
+  taskComments   TaskComment[] @relation("CommentAuthor")
 
   @@map("users")
 }
@@ -91,9 +92,24 @@ model Task {
   createdBy User    @relation("TaskCreator", fields: [createdById], references: [id])
   airtableSync TaskAirtableSync?
   activities   Activity[]
+  comments     TaskComment[]
 
   @@index([projectId, status])
   @@map("tasks")
+}
+
+model TaskComment {
+  id        String   @id @default(cuid())
+  taskId    String   @map("task_id")
+  authorId  String   @map("author_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  task   Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author User @relation("CommentAuthor", fields: [authorId], references: [id])
+
+  @@index([taskId, createdAt])
+  @@map("task_comments")
 }
 
 model Activity {

@@ -11,9 +11,10 @@ type Props = {
   projectId: string;
   members: ApiProjectMember[];
   onClose: () => void;
+  onOpenComments: () => void;
 };
 
-export function TaskDetail({ task, projectId, members, onClose }: Props) {
+export function TaskDetail({ task, projectId, members, onClose, onOpenComments }: Props) {
   const queryClient = useQueryClient();
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description ?? "");
@@ -132,13 +133,22 @@ export function TaskDetail({ task, projectId, members, onClose }: Props) {
         )}
 
         <div className="flex items-center justify-between gap-3">
-          <button
-            onClick={() => deleteTask.mutate()}
-            disabled={deleteTask.isPending}
-            className="text-sm text-red-400 hover:text-red-300"
-          >
-            delete task
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => deleteTask.mutate()}
+              disabled={deleteTask.isPending}
+              className="text-sm text-red-400 hover:text-red-300"
+            >
+              delete task
+            </button>
+            <button
+              type="button"
+              onClick={onOpenComments}
+              className="text-sm text-muted hover:text-white"
+            >
+              comments
+            </button>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={onClose}

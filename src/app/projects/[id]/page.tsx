@@ -8,10 +8,12 @@ import { apiFetch, getToken } from "@/lib/api-client";
 import { Header } from "@/components/Header";
 import { StatusColumn } from "@/components/StatusColumn";
 import { TaskDetail } from "@/components/TaskDetail";
+import { TaskCommentsModal } from "@/components/TaskCommentsModal";
 import { ActivityFeed } from "@/components/ActivityFeed";
-import type { ApiProjectDetail, ApiTask, TaskStatus } from "@/types";
+import type { ApiProjectDetail, ApiTask, Role, TaskStatus } from "@/types";
 import { STATUS_ORDER } from "@/types";
 import type { ExportReport } from "@/lib/airtable/types";
+import { getStoredUser } from "@/lib/api-client";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -21,6 +23,7 @@ export default function ProjectPage({ params }: PageProps) {
   const queryClient = useQueryClient();
 
   const [activeTask, setActiveTask] = useState<ApiTask | null>(null);
+  const [commentTask, setCommentTask] = useState<ApiTask | null>(null);
   const [newTitle, setNewTitle] = useState("");
   const [newColumn, setNewColumn] = useState<TaskStatus>("todo");
   const [error, setError] = useState<string | null>(null);
@@ -75,6 +78,17 @@ export default function ProjectPage({ params }: PageProps) {
     for (const t of project.tasks) {
       tasksByStatus[t.status].push(t);
     }
+  }
+
+  const storedUser = getStoredUser();
+  const userRole: Role | undefined = project?.memberships.find(
+    (m) => m.user.id === storedUser?.id,
+  )?.role;
+  const canComment = userRole === "admin" || userRole === "member";
+
+  function openComments(task: ApiTask) {
+    setCommentTask(task);
+    setActiveTask(null);
   }
 
   return (
@@ -197,6 +211,7 @@ export default function ProjectPage({ params }: PageProps) {
                   status={s}
                   tasks={tasksByStatus[s]}
                   onTaskClick={setActiveTask}
+                  onCommentClick={openComments}
                 />
               ))}
             </div>
@@ -229,6 +244,15 @@ export default function ProjectPage({ params }: PageProps) {
           projectId={id}
           members={project.memberships}
           onClose={() => setActiveTask(null)}
+          onOpenComments={() => openComments(activeTask)}
+        />
+      )}
+
+      {commentTask && (
+        <TaskCommentsModal
+          task={commentTask}
+          canComment={canComment}
+          onClose={() => setCommentTask(null)}
         />
       )}
     </div>

@@ -8,9 +8,10 @@ type Props = {
   status: TaskStatus;
   tasks: ApiTask[];
   onTaskClick: (task: ApiTask) => void;
+  onCommentClick?: (task: ApiTask) => void;
 };
 
-export function StatusColumn({ status, tasks, onTaskClick }: Props) {
+export function StatusColumn({ status, tasks, onTaskClick, onCommentClick }: Props) {
   return (
     <section className="flex flex-col bg-surface border border-border rounded-lg p-4 min-h-[200px]">
       <header className="flex items-center justify-between mb-3">
@@ -21,7 +22,14 @@ export function StatusColumn({ status, tasks, onTaskClick }: Props) {
         {tasks.length === 0 ? (
           <p className="text-xs text-muted italic">no tasks</p>
         ) : (
-          tasks.map((t) => <TaskCard key={t.id} task={t} onClick={onTaskClick} />)
+          tasks.map((t) => (
+            <TaskCard
+              key={t.id}
+              task={t}
+              onClick={onTaskClick}
+              onCommentClick={onCommentClick}
+            />
+          ))
         )}
       </div>
     </section>

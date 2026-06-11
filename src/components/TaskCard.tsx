@@ -5,21 +5,31 @@ import type { ApiTask } from "@/types";
 type Props = {
   task: ApiTask;
   onClick?: (task: ApiTask) => void;
+  onCommentClick?: (task: ApiTask) => void;
 };
 
-export function TaskCard({ task, onClick }: Props) {
+export function TaskCard({ task, onClick, onCommentClick }: Props) {
   return (
-    <button
-      type="button"
-      onClick={() => onClick?.(task)}
-      className="w-full text-left bg-bg border border-border rounded-md p-3 hover:border-accent transition"
-    >
-      <p className="text-sm font-medium leading-snug mb-2">{task.title}</p>
-      <div className="flex items-center justify-between text-xs text-muted">
-        <span>
-          {task.assignee ? task.assignee.name : "unassigned"}
-        </span>
-      </div>
-    </button>
+    <div className="bg-bg border border-border rounded-md p-3 hover:border-accent transition">
+      <button
+        type="button"
+        onClick={() => onClick?.(task)}
+        className="w-full text-left"
+      >
+        <p className="text-sm font-medium leading-snug mb-2">{task.title}</p>
+        <div className="flex items-center justify-between text-xs text-muted">
+          <span>{task.assignee ? task.assignee.name : "unassigned"}</span>
+        </div>
+      </button>
+      {onCommentClick && (
+        <button
+          type="button"
+          onClick={() => onCommentClick(task)}
+          className="mt-2 text-xs text-muted hover:text-accent"
+        >
+          comments
+        </button>
+      )}
+    </div>
   );
 }

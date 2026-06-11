@@ -32,7 +32,7 @@ describe("<TaskCard />", () => {
   it("invokes onClick with the task when clicked", () => {
     const onClick = vi.fn();
     render(<TaskCard task={baseTask} onClick={onClick} />);
-    fireEvent.click(screen.getByRole("button"));
+    fireEvent.click(screen.getByText("Set up analytics"));
     expect(onClick).toHaveBeenCalledWith(baseTask);
   });
 });
