@@ -10,6 +10,7 @@ import { StatusColumn } from "@/components/StatusColumn";
 import { TaskDetail } from "@/components/TaskDetail";
 import type { ApiProjectDetail, ApiTask, TaskStatus } from "@/types";
 import { STATUS_ORDER } from "@/types";
+import type { ExportReport } from "@/lib/airtable/types";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -22,6 +23,7 @@ export default function ProjectPage({ params }: PageProps) {
   const [newTitle, setNewTitle] = useState("");
   const [newColumn, setNewColumn] = useState<TaskStatus>("todo");
   const [error, setError] = useState<string | null>(null);
+  const [exportReport, setExportReport] = useState<ExportReport | null>(null);
 
   useEffect(() => {
     if (!getToken()) router.replace("/login");
@@ -43,6 +45,21 @@ export default function ProjectPage({ params }: PageProps) {
       queryClient.invalidateQueries({ queryKey: ["project", id] });
     },
     onError: (err) => setError(err instanceof Error ? err.message : "create failed"),
+  });
+
+  const exportToAirtable = useMutation({
+    mutationFn: () =>
+      apiFetch<{ report: ExportReport }>(`/api/projects/${id}/export/airtable`, {
+        method: "POST",
+      }),
+    onSuccess: (data) => {
+      setExportReport(data.report);
+      setError(null);
+    },
+    onError: (err) => {
+      setExportReport(null);
+      setError(err instanceof Error ? err.message : "export failed");
+    },
   });
 
   const project = data?.project;
@@ -91,7 +108,41 @@ export default function ProjectPage({ params }: PageProps) {
                   owner: {project.owner.name} · {project.memberships.length} members
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => exportToAirtable.mutate()}
+                disabled={exportToAirtable.isPending}
+                className="bg-accent hover:bg-indigo-500 text-white text-sm font-medium rounded-md px-4 py-2 disabled:opacity-50"
+              >
+                {exportToAirtable.isPending ? "exporting…" : "export to airtable"}
+              </button>
             </div>
+
+            {exportReport && (
+              <div
+                className={`text-sm mb-6 rounded-lg border p-4 ${
+                  exportReport.failed > 0
+                    ? "border-amber-500/50 text-amber-200"
+                    : "border-border text-muted"
+                }`}
+                role="status"
+              >
+                exported {exportReport.created + exportReport.updated} of {exportReport.total}{" "}
+                tasks ({exportReport.created} created, {exportReport.updated} updated
+                {exportReport.failed > 0 ? `, ${exportReport.failed} failed` : ""})
+                {exportReport.failed > 0 && (
+                  <ul className="mt-2 text-xs space-y-1">
+                    {exportReport.results
+                      .filter((r) => r.status === "failed")
+                      .map((r) => (
+                        <li key={r.taskId}>
+                          {r.taskId}: {r.error}
+                        </li>
+                      ))}
+                  </ul>
+                )}
+              </div>
+            )}
 
             <section className="bg-surface border border-border rounded-lg p-4 mb-6">
               <h2 className="text-sm font-medium mb-3">add a task</h2>

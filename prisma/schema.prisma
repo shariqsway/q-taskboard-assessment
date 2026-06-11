@@ -81,7 +81,19 @@ model Task {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   assignee  User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
   createdBy User    @relation("TaskCreator", fields: [createdById], references: [id])
+  airtableSync TaskAirtableSync?
 
   @@index([projectId, status])
   @@map("tasks")
+}
+
+model TaskAirtableSync {
+  taskId           String   @id @map("task_id")
+  airtableRecordId String   @map("airtable_record_id")
+  lastSyncedAt     DateTime @map("last_synced_at")
+  lastError        String?  @map("last_error")
+
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_airtable_syncs")
 }

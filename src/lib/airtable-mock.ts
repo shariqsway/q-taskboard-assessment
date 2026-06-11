@@ -43,6 +43,8 @@ type MockOptions = {
   failureRate?: number;
   /** Which kind of error to simulate when a call fails. */
   failureType?: AirtableErrorType;
+  /** Fail the next N calls deterministically (overrides random rate). */
+  failNextCalls?: number;
 };
 
 export class AirtableMockClient {
@@ -95,6 +97,19 @@ export class AirtableMockClient {
     return Array.from(this.records.values());
   }
 
+  /**
+   * Find a record by TaskBoard Task ID field value.
+   */
+  async findByTaskBoardId(taskBoardId: string): Promise<AirtableRecord | null> {
+    this.maybeThrow();
+    for (const record of this.records.values()) {
+      if (record.fields["TaskBoard Task ID"] === taskBoardId) {
+        return record;
+      }
+    }
+    return null;
+  }
+
   // ---------- test-only helpers (not part of the real Airtable API) ----------
 
   /** Reset the mock to an empty state. Useful between tests. */
@@ -105,7 +120,12 @@ export class AirtableMockClient {
 
   /** Configure the failure simulation. Set rate to 0 to disable. */
   __setFailureRate(rate: number, type: AirtableErrorType = "server-error"): void {
-    this.options = { failureRate: rate, failureType: type };
+    this.options = { failureRate: rate, failureType: type, failNextCalls: 0 };
+  }
+
+  /** Fail the next N API calls deterministically, then succeed. */
+  __setFailNextCalls(count: number, type: AirtableErrorType = "server-error"): void {
+    this.options = { ...this.options, failNextCalls: count, failureType: type, failureRate: 0 };
   }
 
   /** Inspect the in-memory state. Use this in tests to assert what was pushed. */
@@ -121,6 +141,14 @@ export class AirtableMockClient {
   // ---------- internals ----------
 
   private maybeThrow(): void {
+    const failNext = this.options.failNextCalls ?? 0;
+    if (failNext > 0) {
+      this.options.failNextCalls = failNext - 1;
+      const type = this.options.failureType ?? "server-error";
+      const statusCode = type === "rate-limit" ? 429 : type === "network" ? 0 : 500;
+      throw new AirtableError(`Simulated ${type}`, type, statusCode);
+    }
+
     const rate = this.options.failureRate ?? 0;
     if (rate > 0 && Math.random() < rate) {
       const type = this.options.failureType ?? "server-error";
